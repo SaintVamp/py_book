@@ -4,10 +4,15 @@ import time
 
 import requests
 from bs4 import BeautifulSoup, NavigableString
+import platform
 
 # base_url = 'https://www.biqukun.com/77/77927/'
 base_url = 'https://www.biqukun.com/88/88855/'
-base_file = os.getcwd() + '/out/'
+if platform.system()=='Windows':
+    base_file = os.getcwd() + '/out/'
+else:
+    base_file = '/usr/sv/out/'
+
 
 # 按装订区域中的绿色按钮以运行脚本。
 if __name__ == '__main__':
