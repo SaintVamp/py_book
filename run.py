@@ -3,7 +3,7 @@ import os
 import time
 
 import requests
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, NavigableString
 
 # base_url = 'https://www.biqukun.com/77/77927/'
 base_url = 'https://www.biqukun.com/88/88855/'
@@ -29,11 +29,13 @@ if __name__ == '__main__':
         file.close()
         tmp_html = BeautifulSoup(tmp.content, 'html.parser')
         title = tmp_html.select_one("h1").text
-        content = tmp_html.select_one("#content").text
+        contents = tmp_html.select_one("#content").contents
+        # content = tmp_html.select_one("#content").text
         file = open(base_file + book_name, 'a', encoding='utf-8')
         file.write(str(title) + "\n")
-        for s in content:
-            file.write(str(s) + "\n")
+        for content in contents:
+            if isinstance(content, NavigableString):
+                file.write(str(content) + "\n")
         file.write("\n")
         file.close()
         i = i + 1
