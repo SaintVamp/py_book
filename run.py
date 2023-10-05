@@ -9,6 +9,19 @@ import platform
 # 两个小说网站
 # base_urls = ['https://www.biqukun.com/77/77927/']
 base_urls = ['https://www.xs386.com/24786/']
+
+
+# 读取自定义格式的数组文件
+data = []
+with open('book_urls.txt', 'r') as file:
+    for line in file:
+        # 解析每行数据，将字符串转换为数组
+        row = line.strip().split(',')
+        row = [int(x) for x in row]
+        data.append(row)
+print(data)
+
+
 if platform.system() == 'Windows':
     book_path = os.getcwd() + '/out/'
 else:
