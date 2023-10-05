@@ -75,15 +75,13 @@ def parse_file():
 def get_download_method(host):
     match host:
         case "www.biqukun.com":
-            return ['div#info>h1', 'dd>a', 0]
+            return ['div#info>h1', 'dd>a', 0, 1]
         case "www.xs386.com":
-            return ['div#info>h1', 'dd>a', 0]
-        case "www.tadu.com":
-            return ['div.bookNm>a', 'li>div>a', 1]
+            return ['div#info>h1', 'dl>dt:nth-child(14)~dd>a', 1, 2]
+        case "www.biqudd.org":
+            return ['div#info>h1', 'center~dd>a', 0, 0]
         case "www.biqugeuu.com":
-            return ['div#info>h1', 'dd>a', 1]
-        case "www.222biquge.com":
-            return ['div#info>h1', 'dd>a', 1]
+            return ['div#info>h1', 'dl>dt:nth-child(14)~dd>a', 1, 0]
 
 
 def download_thread(main_url, main_info):
@@ -122,7 +120,13 @@ def download_thread(main_url, main_info):
             file = open(book_path + log_name, 'a', encoding='utf-8')
             file.write(str(i) + ":" + str(tmp.status_code) + "\n")
             file.close()
-            tmp_html = BeautifulSoup(tmp.content, 'html.parser')
+            match download_mothod[3]:
+                case 0:
+                    tmp_html = BeautifulSoup(tmp.text.replace("<br />", "<br>"), 'html.parser')
+                case 1:
+                    tmp_html = BeautifulSoup(tmp.content.decode('utf-8').replace("<br />", "<br>"), 'html.parser')
+                case 2:
+                    tmp_html = BeautifulSoup(tmp.content, 'html.parser')
             title = tmp_html.select_one("h1").text
             contents = tmp_html.select_one("#content").contents
             # content = tmp_html.select_one("#content").text
@@ -130,7 +134,8 @@ def download_thread(main_url, main_info):
             file.write(str(title) + "\n")
             for content in contents:
                 if isinstance(content, NavigableString):
-                    file.write(str(content) + "\n")
+                    if len(str(content).replace("\r", "").replace("\n", "")) > 0:
+                        file.write(str(content).replace("\r", "").replace("\n", "") + "\n")
             file.write("\n")
             file.close()
             time.sleep(2)
@@ -167,9 +172,9 @@ if __name__ == '__main__':
             requests.get("http://sv.svsoft.fun:8848/Serv/bookFinish?bookName=" + book_info["book_name"])
         else:
             time.sleep(5)
-            # download_thread(base_url, book_info)
-            t = threading.Thread(target=download_thread, args=(base_url, book_info,))
-            t.start()
+            download_thread(base_url, book_info)
+            # t = threading.Thread(target=download_thread, args=(base_url, book_info,))
+            # t.start()
         print(f"当前活跃的线程个数：{_count}")
 
     print(time.time() - ts)
