@@ -172,9 +172,9 @@ if __name__ == '__main__':
             requests.get("http://sv.svsoft.fun:8848/Serv/bookFinish?bookName=" + book_info["book_name"])
         else:
             time.sleep(5)
-            download_thread(base_url, book_info)
-            # t = threading.Thread(target=download_thread, args=(base_url, book_info,))
-            # t.start()
+            # download_thread(base_url, book_info)
+            t = threading.Thread(target=download_thread, args=(base_url, book_info,))
+            t.start()
         print(f"当前活跃的线程个数：{_count}")
 
     print(time.time() - ts)
