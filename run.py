@@ -38,9 +38,9 @@ def get_book_info(url):
     local_cur = local_conn.cursor()
     op_sql = "select * from status where base_url='" + url + "'"
     local_cur.execute(op_sql)
-    temp = local_cur.fetchone()
+    v_temp = local_cur.fetchone()
     local_conn.close()
-    return temp
+    return v_temp
 
 
 def update_book_info(url, book_name, sub_url, num):
@@ -123,6 +123,7 @@ def download_thread(main_url, main_info):
                 file = open(book_path + log_name, 'a', encoding='utf-8')
                 file.write(str(i) + ":" + str(tmp.status_code) + "\n")
                 file.close()
+                tmp_html = ""
                 match download_mothod[3]:
                     case 0:
                         tmp_html = BeautifulSoup(tmp.text.replace("<br />", "<br>"), 'html.parser')
