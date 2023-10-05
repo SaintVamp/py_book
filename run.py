@@ -85,67 +85,72 @@ def get_download_method(host):
 
 
 def download_thread(main_url, main_info):
-    l_url = main_url.replace("//", "/")[:-1]
-    l_url = l_url.split("/")
-    download_mothod = get_download_method(l_url[1])
-    r = requests.get(main_url)
-    bs = BeautifulSoup(r.content, 'html.parser')
-    # 两个网站容错
-    book_name = bs.select(download_mothod[0])
-    book_name = book_name[0].text
-    book_file = book_name + ".txt"
-    log_name = book_name + ".log"
-    arr_url = bs.select(download_mothod[1])
-    i = 1
-    flag = True
-    t_url = main_info['sub_url']
-    for url in arr_url:
-        if i > main_info['num']:
-            flag = False
-            print(i)
-            match download_mothod[2]:
-                case 0:
-                    t_url = main_url + url.attrs["href"]
-                case 1:
-                    t_url = l_url[0] + "//" + l_url[1] + url.attrs["href"]
-                case 2:
-                    t_url = url.attrs["href"]
-            tmp = requests.get(t_url)
-            v_count = 0
-            while v_count < 20 & tmp.status_code != 200:
-                time.sleep(1)
-                tmp = requests.get(t_url)
-                v_count = v_count + 1
-            print(tmp.status_code)
-            file = open(book_path + log_name, 'a', encoding='utf-8')
-            file.write(str(i) + ":" + str(tmp.status_code) + "\n")
-            file.close()
-            match download_mothod[3]:
-                case 0:
-                    tmp_html = BeautifulSoup(tmp.text.replace("<br />", "<br>"), 'html.parser')
-                case 1:
-                    tmp_html = BeautifulSoup(tmp.content.decode('utf-8').replace("<br />", "<br>"), 'html.parser')
-                case 2:
-                    tmp_html = BeautifulSoup(tmp.content, 'html.parser')
-            title = tmp_html.select_one("h1").text
-            contents = tmp_html.select_one("#content").contents
-            # content = tmp_html.select_one("#content").text
-            file = open(book_path + book_file, 'a', encoding='utf-8')
-            file.write(str(title) + "\n")
-            for content in contents:
-                if isinstance(content, NavigableString):
-                    if len(str(content).replace("\r", "").replace("\n", "")) > 0:
-                        file.write(str(content).replace("\r", "").replace("\n", "") + "\n")
-            file.write("\n")
-            file.close()
-            time.sleep(2)
-            t_url = url.attrs["href"]
-        i = i + 1
-    if flag:
-        update_book_count(main_url, main_info["count"])
-    else:
-        update_book_info(main_url, book_name, t_url, i)
-        requests.get("http://sv.svsoft.fun:8848/Serv/bookDownloadNotice?bookName=" + book_name)
+    try:
+        s = requests.session()
+        s.keep_alive = False
+        l_url = main_url.replace("//", "/")[:-1]
+        l_url = l_url.split("/")
+        download_mothod = get_download_method(l_url[1])
+        r = s.get(main_url)
+        bs = BeautifulSoup(r.content, 'html.parser')
+        # 两个网站容错
+        book_name = bs.select(download_mothod[0])
+        book_name = book_name[0].text
+        book_file = book_name + ".txt"
+        log_name = book_name + ".log"
+        arr_url = bs.select(download_mothod[1])
+        i = 1
+        flag = True
+        t_url = main_info['sub_url']
+        for url in arr_url:
+            if i > main_info['num']:
+                flag = False
+                print(i)
+                match download_mothod[2]:
+                    case 0:
+                        t_url = main_url + url.attrs["href"]
+                    case 1:
+                        t_url = l_url[0] + "//" + l_url[1] + url.attrs["href"]
+                    case 2:
+                        t_url = url.attrs["href"]
+                tmp = s.get(t_url)
+                v_count = 0
+                while v_count < 20 & tmp.status_code != 200:
+                    time.sleep(1)
+                    tmp = s.get(t_url)
+                    v_count = v_count + 1
+                print(tmp.status_code)
+                file = open(book_path + log_name, 'a', encoding='utf-8')
+                file.write(str(i) + ":" + str(tmp.status_code) + "\n")
+                file.close()
+                match download_mothod[3]:
+                    case 0:
+                        tmp_html = BeautifulSoup(tmp.text.replace("<br />", "<br>"), 'html.parser')
+                    case 1:
+                        tmp_html = BeautifulSoup(tmp.content.decode('utf-8').replace("<br />", "<br>"), 'html.parser')
+                    case 2:
+                        tmp_html = BeautifulSoup(tmp.content, 'html.parser')
+                title = tmp_html.select_one("h1").text
+                contents = tmp_html.select_one("#content").contents
+                # content = tmp_html.select_one("#content").text
+                file = open(book_path + book_file, 'a', encoding='utf-8')
+                file.write(str(title) + "\n")
+                for content in contents:
+                    if isinstance(content, NavigableString):
+                        if len(str(content).replace("\r", "").replace("\n", "")) > 0:
+                            file.write(str(content).replace("\r", "").replace("\n", "") + "\n")
+                file.write("\n")
+                file.close()
+                time.sleep(2)
+                t_url = url.attrs["href"]
+            i = i + 1
+        if flag:
+            update_book_count(main_url, main_info["count"])
+        else:
+            update_book_info(main_url, book_name, t_url, i)
+            s.get("http://sv.svsoft.fun:8848/Serv/bookDownloadNotice?bookName=" + book_name)
+    finally:
+        print(1)
 
 
 if __name__ == '__main__':
