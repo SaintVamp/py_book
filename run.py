@@ -1,38 +1,84 @@
 # -*- coding: utf-8 -*-
+import collections
 import os
 import platform
+import sqlite3
 import threading
 import time
 
 import requests
 from bs4 import BeautifulSoup, NavigableString
 
-# 两个小说网站
-# base_urls = ['https://www.biqukun.com/77/77927/']
-# base_urls = ['https://www.xs386.com/24786/']
-print(1)
-# 读取自定义格式的数组文件
-base_urls = []
-with open('book_urls.txt', 'r') as file:
-    for line in file:
-        # 解析每行数据，将字符串转换为数组
-        base_urls.append(line.replace("\n", ""))
-print(base_urls)
-
+# 两个网站
+# base_urls = ['https://www.biqukun.com','https://www.xs386.com']
 if platform.system() == 'Windows':
     book_path = os.getcwd() + '/out/'
 else:
     book_path = '/usr/sv/out/'
 
 
-def download_thread(base_url):
-    l_url = base_url.replace("//", "/")[:-1]
+def check_book_exist(url):
+    local_conn = sqlite3.connect("status.sqlite")
+    local_cur = local_conn.cursor()
+    op_sql = ('CREATE TABLE IF NOT EXISTS status(base_url TEXT PRIMARY KEY,book_name TEXT,sub_url TEXT,num INTEGER,'
+              'timestamp INTEGER,count INTEGER)')
+    local_cur.execute(op_sql)
+
+    op_sql = "select count(*) from status where base_url='" + url + "'"
+    local_cur.execute(op_sql)
+    if local_cur.fetchone()[0] == 0:
+        op_sql = "insert into status values ('" + base_url + "','','',0,0,0)"
+        local_cur.execute(op_sql)
+        local_conn.commit()
+    local_conn.close()
+
+
+def get_book_info(url):
+    local_conn = sqlite3.connect("status.sqlite")
+    local_cur = local_conn.cursor()
+    op_sql = "select * from status where base_url='" + url + "'"
+    local_cur.execute(op_sql)
+    temp = local_cur.fetchone()
+    local_conn.close()
+    return temp
+
+
+def update_book_info(url, book_name, sub_url, num):
+    local_conn = sqlite3.connect("status.sqlite")
+    local_cur = local_conn.cursor()
+    op_sql = ("update status set book_name = '" + book_name + "',num = " + str(num) + ",sub_url = '" + sub_url +
+              "',timestamp = " + str(int(time.time())) + ",count = 0 where base_url = '" + url + "'")
+    local_cur.execute(op_sql)
+    local_conn.commit()
+    local_conn.close()
+
+
+def update_book_count(url, count):
+    local_conn = sqlite3.connect("status.sqlite")
+    local_cur = local_conn.cursor()
+    op_sql = "update status set count = " + str(count + 1) + " where base_url = '" + url + "'"
+    local_cur.execute(op_sql)
+    local_conn.commit()
+    local_conn.close()
+
+
+def parse_file():
+    # 读取自定义格式的数组文件
+    v_urls = []
+    with open('book_urls.txt', 'r') as file:
+        for line in file:
+            # 解析每行数据，将字符串转换为数组
+            v_urls.append(line.replace("\n", ""))
+    return v_urls
+
+
+def download_thread(main_url, main_info):
+    l_url = main_url.replace("//", "/")[:-1]
     l_url = l_url.split("/")
-    r = requests.get(base_url)
+    r = requests.get(main_url)
     bs = BeautifulSoup(r.content, 'html.parser')
     # 两个网站容错
     book_name = bs.select("div#info>h1")
-    flag = 1
     if len(book_name) == 0:
         book_name = bs.select("div.top>h1")
     book_name = book_name[0].text
@@ -42,45 +88,69 @@ def download_thread(base_url):
     if len(arr_url) == 0:
         arr_url = bs.select("dd>a")
     i = 1
+    flag = True
+    t_url = main_info['sub_url']
     for url in arr_url:
-        print(i)
-        if url.attrs["href"].find(l_url[2]):
-            t_url = l_url[0] + "//" + l_url[1] + url.attrs["href"]
-        else:
-            t_url = l_url[0] + "//" + l_url[1] + "/" + l_url[2] + url.attrs["href"]
-        tmp = requests.get(t_url)
-        print(tmp.status_code)
-        file = open(book_path + log_name, 'a', encoding='utf-8')
-        file.write(str(i) + ":" + str(tmp.status_code) + "\n")
-        file.close()
-        tmp_html = BeautifulSoup(tmp.content, 'html.parser')
-        title = tmp_html.select_one("h1").text
-        contents = tmp_html.select_one("#content").contents
-        # content = tmp_html.select_one("#content").text
-        file = open(book_path + book_file, 'a', encoding='utf-8')
-        file.write(str(title) + "\n")
-        for content in contents:
-            if isinstance(content, NavigableString):
-                file.write(str(content) + "\n")
-        file.write("\n")
-        file.close()
+        if i > main_info['num']:
+            flag = False
+            print(i)
+            if url.attrs["href"].find(l_url[2]) > 0:
+                t_url = l_url[0] + "//" + l_url[1] + url.attrs["href"]
+            else:
+                t_url = main_url + url.attrs["href"]
+            tmp = requests.get(t_url)
+            print(tmp.status_code)
+            file = open(book_path + log_name, 'a', encoding='utf-8')
+            file.write(str(i) + ":" + str(tmp.status_code) + "\n")
+            file.close()
+            tmp_html = BeautifulSoup(tmp.content, 'html.parser')
+            title = tmp_html.select_one("h1").text
+            contents = tmp_html.select_one("#content").contents
+            # content = tmp_html.select_one("#content").text
+            file = open(book_path + book_file, 'a', encoding='utf-8')
+            file.write(str(title) + "\n")
+            for content in contents:
+                if isinstance(content, NavigableString):
+                    file.write(str(content) + "\n")
+            file.write("\n")
+            file.close()
+            time.sleep(2)
+            t_url = url.attrs["href"]
         i = i + 1
-        time.sleep(2)
-    requests.get("http://sv.svsoft.fun:8848/Serv/bookDownloadNotice?bookName=" + book_name)
+    if flag:
+        update_book_count(main_url, main_info["count"])
+    else:
+        update_book_info(main_url, book_name, t_url, i)
+        requests.get("http://sv.svsoft.fun:8848/Serv/bookDownloadNotice?bookName=" + book_name)
 
 
-def download_thread1(base_url):
-    for i in range(10):
-        print(base_url + str(i))
-        time.sleep(2)
-
-
-# 按装订区域中的绿色按钮以运行脚本。
 if __name__ == '__main__':
     ts = time.time()
     print(ts)
+    base_urls = parse_file()
     for base_url in base_urls:
-        t = threading.Thread(target=download_thread1, args=(base_url,))
-        t.start()
+        _count = threading.active_count()
+        while _count >= 5:
+            print(f"等待中，线程个数：{_count}")
+            _count = threading.active_count()
+            time.sleep(60)
+        check_book_exist(base_url)
+        temp = get_book_info(base_url)
+
+        book_info = collections.OrderedDict()
+        book_info["base_url"] = temp[0]
+        book_info["book_name"] = temp[1]
+        book_info["sub_url"] = temp[2]
+        book_info["num"] = temp[3]
+        book_info["timestamp"] = temp[4]
+        book_info["count"] = temp[5]
+        if book_info['count'] == 5:
+            requests.get("http://sv.svsoft.fun:8848/Serv/bookFinish?bookName=" + book_info["book_name"])
+        else:
+            time.sleep(5)
+            # download_thread(base_url, book_info)
+            t = threading.Thread(target=download_thread, args=(base_url, book_info,))
+            t.start()
+        print(f"当前活跃的线程个数：{_count}")
 
     print(time.time() - ts)
