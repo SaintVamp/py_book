@@ -10,7 +10,7 @@ from bs4 import BeautifulSoup, NavigableString
 # 两个小说网站
 # base_urls = ['https://www.biqukun.com/77/77927/']
 # base_urls = ['https://www.xs386.com/24786/']
-
+print(1)
 # 读取自定义格式的数组文件
 base_urls = []
 with open('book_urls.txt', 'r') as file:
