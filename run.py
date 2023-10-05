@@ -10,7 +10,7 @@ import requests
 from bs4 import BeautifulSoup, NavigableString
 
 # 两个网站
-# base_urls = ['https://www.biqukun.com','https://www.xs386.com']
+# base_urls = ['https://www.biqukun.com','https://www.xs386.com','https://www.tadu.com/']
 if platform.system() == 'Windows':
     book_path = os.getcwd() + '/out/'
 else:
@@ -72,21 +72,32 @@ def parse_file():
     return v_urls
 
 
+def get_download_method(host):
+    match host:
+        case "www.biqukun.com":
+            return ['div#info>h1', 'dd>a', 0]
+        case "www.xs386.com":
+            return ['div#info>h1', 'dd>a', 0]
+        case "www.tadu.com":
+            return ['div.bookNm>a', 'li>div>a', 2]
+        case "www.biqugeuu.com":
+            return ['div#info>h1', 'dd>a', 1]
+        case "www.222biquge.com":
+            return ['div#info>h1', 'dd>a', 1]
+
+
 def download_thread(main_url, main_info):
     l_url = main_url.replace("//", "/")[:-1]
     l_url = l_url.split("/")
+    download_mothod = get_download_method(l_url[1])
     r = requests.get(main_url)
     bs = BeautifulSoup(r.content, 'html.parser')
     # 两个网站容错
-    book_name = bs.select("div#info>h1")
-    if len(book_name) == 0:
-        book_name = bs.select("div.top>h1")
+    book_name = bs.select(download_mothod[0])
     book_name = book_name[0].text
     book_file = book_name + ".txt"
     log_name = book_name + ".log"
-    arr_url = bs.select("dl>dt~dd>a")
-    if len(arr_url) == 0:
-        arr_url = bs.select("dd>a")
+    arr_url = bs.select(download_mothod[1])
     i = 1
     flag = True
     t_url = main_info['sub_url']
@@ -94,11 +105,19 @@ def download_thread(main_url, main_info):
         if i > main_info['num']:
             flag = False
             print(i)
-            if url.attrs["href"].find(l_url[2]) > 0:
-                t_url = l_url[0] + "//" + l_url[1] + url.attrs["href"]
-            else:
-                t_url = main_url + url.attrs["href"]
+            match download_mothod[2]:
+                case 0:
+                    t_url = main_url + url.attrs["href"]
+                case 1:
+                    t_url = l_url[0] + "//" + l_url[1] + url.attrs["href"]
+                case 2:
+                    t_url = url.attrs["href"]
             tmp = requests.get(t_url)
+            v_count = 0
+            while v_count < 20 & tmp.status_code == 503:
+                time.sleep(1)
+                tmp = requests.get(t_url)
+                v_count = v_count + 1
             print(tmp.status_code)
             file = open(book_path + log_name, 'a', encoding='utf-8')
             file.write(str(i) + ":" + str(tmp.status_code) + "\n")
@@ -148,9 +167,9 @@ if __name__ == '__main__':
             requests.get("http://sv.svsoft.fun:8848/Serv/bookFinish?bookName=" + book_info["book_name"])
         else:
             time.sleep(5)
-            # download_thread(base_url, book_info)
-            t = threading.Thread(target=download_thread, args=(base_url, book_info,))
-            t.start()
+            download_thread(base_url, book_info)
+            # t = threading.Thread(target=download_thread, args=(base_url, book_info,))
+            # t.start()
         print(f"当前活跃的线程个数：{_count}")
 
     print(time.time() - ts)
