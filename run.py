@@ -69,6 +69,7 @@ def parse_file():
         for line in file:
             # 解析每行数据，将字符串转换为数组
             v_urls.append(line.replace("\n", ""))
+    file.close()
     return v_urls
 
 
@@ -148,10 +149,12 @@ def download_thread(main_url, main_info):
         if flag:
             update_book_count(main_url, main_info["count"])
         else:
-            update_book_info(main_url, book_name, t_url, i)
-            s.get("http://sv.svsoft.fun:8848/Serv/bookDownloadNotice?bookName=" + book_name)
+            update_book_info(main_url, book_name, t_url, i - 1)
+            s.get("http://4.0.4.51:8080/Serv/bookDownloadNotice?bookName=" + book_name)
     finally:
-        print(1)
+        file = open(book_path + log_name, 'a', encoding='utf-8')
+        file.write(main_url + ":" + str(tmp.status_code) + "\n")
+        file.close()
 
 
 if __name__ == '__main__':
@@ -175,7 +178,7 @@ if __name__ == '__main__':
         book_info["timestamp"] = temp[4]
         book_info["count"] = temp[5]
         if book_info['count'] == 5:
-            requests.get("http://sv.svsoft.fun:8848/Serv/bookFinish?bookName=" + book_info["book_name"])
+            requests.get("http://4.0.4.51:8080/Serv/bookFinish?bookName=" + book_info["book_name"])
         else:
             time.sleep(5)
             # download_thread(base_url, book_info)
