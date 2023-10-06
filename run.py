@@ -2,10 +2,10 @@
 import collections
 import os
 import platform
-import sqlite3
 import threading
 import time
 
+import pymysql
 import requests
 from bs4 import BeautifulSoup, NavigableString
 
@@ -16,50 +16,36 @@ if platform.system() == 'Windows':
 else:
     book_path = '/usr/sv/out/'
 
+db = pymysql.connect(host="4.0.4.52", port=7848, user="sv", password="sv@8004", db="SV", charset='utf8')
+cursor = db.cursor()
+
 
 def check_book_exist(url):
-    local_conn = sqlite3.connect("status.sqlite")
-    local_cur = local_conn.cursor()
-    op_sql = ('CREATE TABLE IF NOT EXISTS status(base_url TEXT PRIMARY KEY,book_name TEXT,sub_url TEXT,num INTEGER,'
-              'timestamp INTEGER,count INTEGER)')
-    local_cur.execute(op_sql)
-
-    op_sql = "select count(*) from status where base_url='" + url + "'"
-    local_cur.execute(op_sql)
-    if local_cur.fetchone()[0] == 0:
-        op_sql = "insert into status values ('" + base_url + "','','',0,0,0)"
-        local_cur.execute(op_sql)
-        local_conn.commit()
-    local_conn.close()
+    op_sql = "select count(*) from BookInfo where base_url='" + url + "'"
+    cursor.execute(op_sql)
+    if cursor.fetchone()[0] == 0:
+        op_sql = "insert into BookInfo values ('" + base_url + "','','',0,0,0)"
+        cursor.execute(op_sql)
+        db.commit()
 
 
 def get_book_info(url):
-    local_conn = sqlite3.connect("status.sqlite")
-    local_cur = local_conn.cursor()
-    op_sql = "select * from status where base_url='" + url + "'"
-    local_cur.execute(op_sql)
-    v_temp = local_cur.fetchone()
-    local_conn.close()
-    return v_temp
+    op_sql = "select * from BookInfo where base_url='" + url + "'"
+    cursor.execute(op_sql)
+    return cursor.fetchone()
 
 
 def update_book_info(url, book_name, sub_url, num):
-    local_conn = sqlite3.connect("status.sqlite")
-    local_cur = local_conn.cursor()
-    op_sql = ("update status set book_name = '" + book_name + "',num = " + str(num) + ",sub_url = '" + sub_url +
+    op_sql = ("update BookInfo set book_name = '" + book_name + "',num = " + str(num) + ",sub_url = '" + sub_url +
               "',timestamp = " + str(int(time.time())) + ",count = 0 where base_url = '" + url + "'")
-    local_cur.execute(op_sql)
-    local_conn.commit()
-    local_conn.close()
+    cursor.execute(op_sql)
+    db.commit()
 
 
 def update_book_count(url, count):
-    local_conn = sqlite3.connect("status.sqlite")
-    local_cur = local_conn.cursor()
-    op_sql = "update status set count = " + str(count + 1) + " where base_url = '" + url + "'"
-    local_cur.execute(op_sql)
-    local_conn.commit()
-    local_conn.close()
+    op_sql = "update BookInfo set count = " + str(count + 1) + " where base_url = '" + url + "'"
+    cursor.execute(op_sql)
+    db.commit()
 
 
 def parse_file():
@@ -86,20 +72,21 @@ def get_download_method(host):
 
 
 def download_thread(main_url, main_info):
+    log_name = ""
     try:
         s = requests.session()
         s.keep_alive = False
         l_url = main_url.replace("//", "/")[:-1]
         l_url = l_url.split("/")
-        download_mothod = get_download_method(l_url[1])
+        download_method = get_download_method(l_url[1])
         r = s.get(main_url)
         bs = BeautifulSoup(r.content, 'html.parser')
         # 两个网站容错
-        book_name = bs.select(download_mothod[0])
+        book_name = bs.select(download_method[0])
         book_name = book_name[0].text
         book_file = book_name + ".txt"
         log_name = book_name + ".log"
-        arr_url = bs.select(download_mothod[1])
+        arr_url = bs.select(download_method[1])
         i = 1
         flag = True
         t_url = main_info['sub_url']
@@ -107,7 +94,7 @@ def download_thread(main_url, main_info):
             if i > main_info['num']:
                 flag = False
                 print(i)
-                match download_mothod[2]:
+                match download_method[2]:
                     case 0:
                         t_url = main_url + url.attrs["href"]
                     case 1:
@@ -125,7 +112,7 @@ def download_thread(main_url, main_info):
                 file.write(str(i) + ":" + str(tmp.status_code) + "\n")
                 file.close()
                 tmp_html = ""
-                match download_mothod[3]:
+                match download_method[3]:
                     case 0:
                         tmp_html = BeautifulSoup(tmp.text.replace("<br />", "<br>"), 'html.parser')
                     case 1:
@@ -145,15 +132,16 @@ def download_thread(main_url, main_info):
                 file.close()
                 time.sleep(2)
                 t_url = url.attrs["href"]
+                update_book_info(main_url, book_name, t_url, i - 1)
             i = i + 1
         if flag:
             update_book_count(main_url, main_info["count"])
         else:
-            update_book_info(main_url, book_name, t_url, i - 1)
+
             s.get("http://4.0.4.51:8080/Serv/bookDownloadNotice?bookName=" + book_name)
-    finally:
+    except Exception as e:
         file = open(book_path + log_name, 'a', encoding='utf-8')
-        file.write(main_url + ":" + str(tmp.status_code) + "\n")
+        file.write(main_url + " : has error > " + e + "\n")
         file.close()
 
 
@@ -181,9 +169,9 @@ if __name__ == '__main__':
             requests.get("http://4.0.4.51:8080/Serv/bookFinish?bookName=" + book_info["book_name"])
         else:
             time.sleep(5)
-            # download_thread(base_url, book_info)
-            t = threading.Thread(target=download_thread, args=(base_url, book_info,))
-            t.start()
+            download_thread(base_url, book_info)
+            # t = threading.Thread(target=download_thread, args=(base_url, book_info,))
+            # t.start()
         print(f"当前活跃的线程个数：{_count}")
 
     print(time.time() - ts)
