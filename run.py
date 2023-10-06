@@ -14,7 +14,7 @@ from bs4 import BeautifulSoup, NavigableString
 if platform.system() == 'Windows':
     book_path = os.getcwd() + '/out/'
 else:
-    book_path = '/usr/sv/out/'
+    book_path = '/volume2/docker/reader/out/'
 
 
 def check_book_exist(url):
