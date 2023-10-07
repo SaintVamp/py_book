@@ -11,10 +11,11 @@ from bs4 import BeautifulSoup, NavigableString
 
 # 两个网站
 # base_urls = ['https://www.biqukun.com','https://www.xs386.com','https://www.tadu.com/']
+linux_path = "/usr/sv/"
 if platform.system() == 'Windows':
     book_path = os.getcwd() + '/out/'
 else:
-    book_path = '/usr/sv/out/'
+    book_path = linux_path + 'out/'
 
 db = pymysql.connect(host="4.0.4.52", port=7848, user="sv", password="sv@8004", db="SV", charset='utf8')
 cursor = db.cursor()
@@ -51,7 +52,7 @@ def update_book_count(url, count):
 def parse_file():
     # 读取自定义格式的数组文件
     v_urls = []
-    with open('book_urls.txt', 'r') as file:
+    with open(linux_path + 'book_urls.txt', 'r') as file:
         for line in file:
             # 解析每行数据，将字符串转换为数组
             v_urls.append(line.replace("\n", ""))
