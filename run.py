@@ -17,36 +17,39 @@ if platform.system() == 'Windows':
 else:
     book_path = linux_path + 'out/'
 
-db = pymysql.connect(host="4.0.4.52", port=7848, user="sv", password="sv@8004", db="SV", charset='utf8')
-cursor = db.cursor()
+
+def operate_mysql(op_sql):
+    db = pymysql.connect(host="4.0.4.52", port=7848, user="sv", password="sv@8004", db="SV", charset='utf8')
+    cursor = db.cursor()
+    cursor.execute(op_sql)
+    temp = cursor.fetchone()
+    db.commit()
+    db.close()
+    return temp
 
 
 def check_book_exist(url):
     op_sql = "select count(*) from BookInfo where base_url='" + url + "'"
-    cursor.execute(op_sql)
-    if cursor.fetchone()[0] == 0:
+    date = operate_mysql(op_sql)
+    if date[0] == 0:
         op_sql = "insert into BookInfo values ('" + base_url + "','','',0,0,0)"
-        cursor.execute(op_sql)
-        db.commit()
+        operate_mysql(op_sql)
 
 
 def get_book_info(url):
     op_sql = "select * from BookInfo where base_url='" + url + "'"
-    cursor.execute(op_sql)
-    return cursor.fetchone()
+    return operate_mysql(op_sql)
 
 
 def update_book_info(url, book_name, sub_url, num):
     op_sql = ("update BookInfo set book_name = '" + book_name + "',num = " + str(num) + ",sub_url = '" + sub_url +
               "',timestamp = " + str(int(time.time())) + ",count = 0 where base_url = '" + url + "'")
-    cursor.execute(op_sql)
-    db.commit()
+    operate_mysql(op_sql)
 
 
 def update_book_count(url, count):
     op_sql = "update BookInfo set count = " + str(count + 1) + " where base_url = '" + url + "'"
-    cursor.execute(op_sql)
-    db.commit()
+    operate_mysql(op_sql)
 
 
 def parse_file():
