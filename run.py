@@ -133,7 +133,7 @@ def download_thread(main_url, main_info):
                 file.close()
                 time.sleep(2)
                 t_url = url.attrs["href"]
-                update_book_info(main_url, book_name, t_url, i - 1)
+                update_book_info(main_url, book_name, t_url, i)
             i = i + 1
         if flag:
             update_book_count(main_url, main_info["count"])
