@@ -22,10 +22,10 @@ def operate_mysql(op_sql):
     db = pymysql.connect(host="4.0.4.52", port=7848, user="sv", password="sv@8004", db="SV", charset='utf8')
     cursor = db.cursor()
     cursor.execute(op_sql)
-    temp = cursor.fetchone()
+    tmp = cursor.fetchone()
     db.commit()
     db.close()
-    return temp
+    return tmp
 
 
 def check_book_exist(url):
@@ -160,15 +160,15 @@ if __name__ == '__main__':
             _count = threading.active_count()
             time.sleep(60)
         check_book_exist(base_url)
-        temp = get_book_info(base_url)
+        t_book_info = get_book_info(base_url)
 
         book_info = collections.OrderedDict()
-        book_info["base_url"] = temp[0]
-        book_info["book_name"] = temp[1]
-        book_info["sub_url"] = temp[2]
-        book_info["num"] = temp[3]
-        book_info["timestamp"] = temp[4]
-        book_info["count"] = temp[5]
+        book_info["base_url"] = t_book_info[0]
+        book_info["book_name"] = t_book_info[1]
+        book_info["sub_url"] = t_book_info[2]
+        book_info["num"] = t_book_info[3]
+        book_info["timestamp"] = t_book_info[4]
+        book_info["count"] = t_book_info[5]
         if book_info['count'] == 5:
             requests.get("http://4.0.4.51:8080/Serv/bookFinish?bookName=" + book_info["book_name"])
         else:
