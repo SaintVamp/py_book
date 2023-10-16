@@ -11,7 +11,7 @@ from bs4 import BeautifulSoup, NavigableString
 
 # 两个网站
 # base_urls = ['https://www.biqukun.com','https://www.xs386.com','https://www.tadu.com/']
-linux_path = "/usr/sv/book"
+linux_path = "/usr/sv/book/"
 if platform.system() == 'Windows':
     book_path = os.getcwd() + '/out/'
 else:
