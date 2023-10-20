@@ -9,13 +9,13 @@ import pymysql
 import requests
 from bs4 import BeautifulSoup, NavigableString
 
-# 两个网站
-# base_urls = ['https://www.biqukun.com','https://www.xs386.com','https://www.tadu.com/']
 linux_path = "/usr/sv/book/"
 if platform.system() == 'Windows':
     book_path = os.getcwd() + '/out/'
+    config_path = os.getcwd() + "/"
 else:
     book_path = linux_path + 'out/'
+    config_path = linux_path
 
 
 def operate_mysql(op_sql):
@@ -32,7 +32,7 @@ def check_book_exist(url):
     op_sql = "select count(*) from BookInfo where base_url='" + url + "'"
     date = operate_mysql(op_sql)
     if date[0] == 0:
-        op_sql = "insert into BookInfo values ('" + base_url + "','','',0,0,0)"
+        op_sql = "insert into BookInfo values ('" + base_url + "','','',0,0,0,1)"
         operate_mysql(op_sql)
 
 
@@ -55,7 +55,7 @@ def update_book_count(url, count):
 def parse_file():
     # 读取自定义格式的数组文件
     v_urls = []
-    with open(linux_path + 'book_urls.txt', 'r') as file:
+    with open(config_path + 'book_urls.txt', 'r') as file:
         for line in file:
             # 解析每行数据，将字符串转换为数组
             v_urls.append(line.replace("\n", ""))
@@ -169,13 +169,15 @@ if __name__ == '__main__':
         book_info["num"] = t_book_info[3]
         book_info["timestamp"] = t_book_info[4]
         book_info["count"] = t_book_info[5]
-        if book_info['count'] == 5:
-            requests.get("http://4.0.4.51:8080/Serv/bookFinish?bookName=" + book_info["book_name"])
-        else:
-            time.sleep(5)
-            # download_thread(base_url, book_info)
-            t = threading.Thread(target=download_thread, args=(base_url, book_info,))
-            t.start()
-        print(f"当前活跃的线程个数：{_count}")
+        book_info["pass"] = t_book_info[6]
+        if book_info["pass"] == 1:
+            if book_info['count'] == 5:
+                requests.get("http://4.0.4.51:8080/Serv/bookFinish?bookName=" + book_info["book_name"])
+            else:
+                time.sleep(5)
+                # download_thread(base_url, book_info)
+                t = threading.Thread(target=download_thread, args=(base_url, book_info,))
+                t.start()
+            print(f"当前活跃的线程个数：{_count}")
 
     print(time.time() - ts)
