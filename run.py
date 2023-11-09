@@ -73,6 +73,8 @@ def get_download_method(host):
             return ['div#info>h1', 'center~dd>a', 0, 0]
         case "www.biqugeuu.com":
             return ['div#info>h1', 'dl>dt:nth-child(14)~dd>a', 1, 0]
+        case "www.aishangba4.com":
+            return ['div#info>h1', 'dd>a', 1, 0]
 
 
 def download_thread(main_url, main_info):
@@ -154,6 +156,7 @@ if __name__ == '__main__':
     print(ts)
     base_urls = parse_file()
     for base_url in base_urls:
+        base_url='https://www.aishangba4.com/142_142703/'
         _count = threading.active_count()
         while _count >= 5:
             print(f"等待中，线程个数：{_count}")
