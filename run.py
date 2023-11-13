@@ -64,6 +64,7 @@ def parse_file():
 
 
 def get_download_method(host):
+    ### [名称,链接,拼接方式,替<BR>方式]
     match host:
         case "www.biqukun.com":
             return ['div#info>h1', 'dd>a', 0, 1]
@@ -75,6 +76,8 @@ def get_download_method(host):
             return ['div#info>h1', 'dl>dt:nth-child(14)~dd>a', 1, 0]
         case "www.aishangba4.com":
             return ['div#info>h1', 'dd>a', 1, 0]
+        case "www.bqge.org":
+            return ['div#info>h1', 'dl>dt:nth-child(7)~dd>a', 1, 0]
 
 
 def download_thread(main_url, main_info):
@@ -127,7 +130,6 @@ def download_thread(main_url, main_info):
                         tmp_html = BeautifulSoup(tmp.content, 'html.parser')
                 title = tmp_html.select_one("h1").text
                 contents = tmp_html.select_one("#content").contents
-                # content = tmp_html.select_one("#content").text
                 file = open(book_path + book_file, 'a', encoding='utf-8')
                 file.write(str(title) + "\n")
                 for content in contents:
@@ -143,7 +145,6 @@ def download_thread(main_url, main_info):
         if flag:
             update_book_count(main_url, main_info["count"])
         else:
-
             s.get("http://4.0.4.51:8080/Serv/bookDownloadNotice?bookName=" + book_name)
     except Exception as e:
         file = open(book_path + log_name, 'a', encoding='utf-8')
@@ -156,7 +157,6 @@ if __name__ == '__main__':
     print(ts)
     base_urls = parse_file()
     for base_url in base_urls:
-        base_url='https://www.aishangba4.com/142_142703/'
         _count = threading.active_count()
         while _count >= 5:
             print(f"等待中，线程个数：{_count}")
