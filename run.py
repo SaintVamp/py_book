@@ -73,7 +73,7 @@ def get_download_method(host):
         case "www.biqudd.org":
             return ['div#info>h1', 'center~dd>a', 0, 0]
         case "www.biqugeuu.com":
-            return ['div#info>h1', 'dl>dt:nth-child(14)~dd>a', 1, 0]
+            return ['div#info>h1', 'dl>dt:nth-child(14)~dd>a', 1, 1]
         case "www.aishangba4.com":
             return ['div#info>h1', 'dd>a', 1, 0]
         case "www.bqge.org":
@@ -123,9 +123,12 @@ def download_thread(main_url, main_info):
                 tmp_html = ""
                 match download_method[3]:
                     case 0:
-                        tmp_html = BeautifulSoup(tmp.content.decode('GBK').replace("<br />", "<br>"), 'html.parser')
+                        tmp_html = BeautifulSoup(tmp.text.replace("<br />", "<br>"), 'html.parser')
                     case 1:
-                        tmp_html = BeautifulSoup(tmp.content.decode('utf-8').replace("<br />", "<br>"), 'html.parser')
+                        try:
+                            tmp_html = BeautifulSoup(tmp.content.decode('gbk').replace("<br />", "<br>"), 'html.parser')
+                        except Exception as e:
+                            tmp_html = BeautifulSoup(tmp.content.decode('utf-8').replace("<br />", "<br>"), 'html.parser')
                     case 2:
                         tmp_html = BeautifulSoup(tmp.content, 'html.parser')
                 title = tmp_html.select_one("h1").text
@@ -178,9 +181,9 @@ if __name__ == '__main__':
                 requests.get("http://4.0.4.51:8080/Serv/bookFinish?bookName=" + book_info["book_name"])
             else:
                 time.sleep(5)
-                # download_thread(base_url, book_info)
-                t = threading.Thread(target=download_thread, args=(base_url, book_info,))
-                t.start()
+                download_thread(base_url, book_info)
+                # t = threading.Thread(target=download_thread, args=(base_url, book_info,))
+                # t.start()
             print(f"当前活跃的线程个数：{_count}")
 
     print(time.time() - ts)
