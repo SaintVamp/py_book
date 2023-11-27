@@ -123,7 +123,7 @@ def download_thread(main_url, main_info):
                 tmp_html = ""
                 match download_method[3]:
                     case 0:
-                        tmp_html = BeautifulSoup(tmp.text.replace("<br />", "<br>"), 'html.parser')
+                        tmp_html = BeautifulSoup(tmp.content.decode('GBK').replace("<br />", "<br>"), 'html.parser')
                     case 1:
                         tmp_html = BeautifulSoup(tmp.content.decode('utf-8').replace("<br />", "<br>"), 'html.parser')
                     case 2:
