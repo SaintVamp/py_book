@@ -52,6 +52,43 @@ def update_book_count(url, count):
     operate_mysql(op_sql)
 
 
+def page_2_txt(s, url, method, nt_page):
+    tmp = s.get(url)
+
+    v_count = 0
+    while v_count < 20 & tmp.status_code != 200:
+        time.sleep(1)
+        tmp = s.get(url)
+        v_count = v_count + 1
+    print(tmp.status_code)
+
+    v_html = ""
+    match method:
+        case 0:
+            v_html = BeautifulSoup(tmp.text.replace("<br />", "<br>").replace("<p>", "").replace("</p>", "<br>"), 'html.parser')
+        case 1:
+            try:
+                v_html = BeautifulSoup(tmp.content.decode('gbk').replace("<br />", "<br>"), 'html.parser')
+            except Exception as e:
+                print(e)
+                try:
+                    v_html = BeautifulSoup(tmp.content.decode('UTF-8').replace("<br />", "<br>"), 'html.parser')
+                except Exception as e:
+                    print(e)
+                    v_html = BeautifulSoup(tmp.content, 'html.parser')
+        case 2:
+            v_html = BeautifulSoup(tmp.content, 'html.parser')
+    title = v_html.select_one("h1").text
+    contents = v_html.select_one("#content").contents
+    nt_page_tag = v_html.select_one(nt_page)
+    nt_page_text = v_html.select_one(nt_page).text
+    time.sleep(2)
+    if nt_page_text.find("下一页") > -1:
+        return [title, contents, True, nt_page_tag, tmp.status_code]
+    else:
+        return [title, contents, False, nt_page_tag, tmp.status_code]
+
+
 def parse_file():
     # 读取自定义格式的数组文件
     v_urls = []
@@ -64,7 +101,7 @@ def parse_file():
 
 
 def get_download_method(host):
-    ### [名称,链接,拼接方式,替<BR>方式]
+    ### [名称,链接,拼接方式,替<BR>方式,下一页/下一章标志]
     match host:
         case "www.biqukun.com":
             return ['div#info>h1', 'dd>a', 0, 1]
@@ -79,7 +116,7 @@ def get_download_method(host):
         case "www.bqge.org":
             return ['div#info>h1', 'dl>dt:nth-child(7)~dd>a', 1, 0]
         case "www.yeduku.net":
-            return ['div#info>h1', 'dl>dt:nth-child(14)~dd>a', 1, 0]
+            return ['div#info>h1', 'dl>dt:nth-child(14)~dd>a', 1, 0, "a#pager_next"]
 
 
 def download_thread(main_url, main_info):
@@ -105,51 +142,33 @@ def download_thread(main_url, main_info):
             if i > main_info['num']:
                 flag = False
                 print(i)
-                match download_method[2]:
-                    case 0:
-                        t_url = main_url + url.attrs["href"]
-                    case 1:
-                        t_url = l_url[0] + "//" + l_url[1] + url.attrs["href"]
-                    case 2:
-                        t_url = url.attrs["href"]
-                tmp = s.get(t_url)
-
-                v_count = 0
-                while v_count < 20 & tmp.status_code != 200:
-                    time.sleep(1)
-                    tmp = s.get(t_url)
-                    v_count = v_count + 1
-                print(tmp.status_code)
-                file = open(book_path + log_name, 'a', encoding='utf-8')
-                file.write(str(i) + ":" + str(tmp.status_code) + "\n")
-                file.close()
-                tmp_html = ""
-                match download_method[3]:
-                    case 0:
-                        tmp_html = BeautifulSoup(tmp.text.replace("<br />", "<br>"), 'html.parser')
-                    case 1:
-                        try:
-                            tmp_html = BeautifulSoup(tmp.content.decode('gbk').replace("<br />", "<br>"), 'html.parser')
-                        except Exception as e:
-                            print(e)
-                            try:
-                                tmp_html = BeautifulSoup(tmp.content.decode('UTF-8').replace("<br />", "<br>"), 'html.parser')
-                            except Exception as e:
-                                print(e)
-                                tmp_html = BeautifulSoup(tmp.content, 'html.parser')
-                    case 2:
-                        tmp_html = BeautifulSoup(tmp.content, 'html.parser')
-                title = tmp_html.select_one("h1").text
-                contents = tmp_html.select_one("#content").contents
-                file = open(book_path + book_file, 'a', encoding='utf-8')
-                file.write(str(title) + "\n")
-                for content in contents:
-                    if isinstance(content, NavigableString):
-                        if len(str(content).replace("\r", "").replace("\n", "")) > 0:
-                            file.write(str(content).replace("\r", "").replace("\n", "") + "\n")
-                file.write("\n")
-                file.close()
-                time.sleep(2)
+                next_page = True
+                title_flag = True
+                v_url = url
+                while next_page:
+                    match download_method[2]:
+                        case 0:
+                            t_url = main_url + v_url.attrs["href"]
+                        case 1:
+                            t_url = l_url[0] + "//" + l_url[1] + v_url.attrs["href"]
+                        case 2:
+                            t_url = v_url.attrs["href"]
+                    rt = page_2_txt(s, t_url, download_method[3], download_method[4])
+                    next_page = rt[2]
+                    v_url = rt[3]
+                    file = open(book_path + log_name, 'a', encoding='utf-8')
+                    file.write(str(i) + ":" + str(rt[4]) + "\n")
+                    file.close()
+                    file = open(book_path + book_file, 'a', encoding='utf-8')
+                    if title_flag:
+                        file.write(str(rt[0]) + "\n")
+                        title_flag = False
+                    for content in rt[1]:
+                        if isinstance(content, NavigableString):
+                            if len(str(content).replace("\r", "").replace("\n", "")) > 0:
+                                file.write(str(content).replace("\r", "").replace("\n", "").replace("\t", "") + "\n")
+                    file.write("\n")
+                    file.close()
                 t_url = url.attrs["href"]
                 update_book_info(main_url, book_name, t_url, i)
             i = i + 1
@@ -189,9 +208,9 @@ if __name__ == '__main__':
                 requests.get("http://4.0.4.51:8080/Serv/bookFinish?bookName=" + book_info["book_name"])
             else:
                 time.sleep(5)
-                # download_thread(base_url, book_info)
-                t = threading.Thread(target=download_thread, args=(base_url, book_info,))
-                t.start()
+                download_thread(base_url, book_info)
+                # t = threading.Thread(target=download_thread, args=(base_url, book_info,))
+                # t.start()
             print(f"当前活跃的线程个数：{_count}")
 
     print(time.time() - ts)
