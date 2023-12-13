@@ -78,6 +78,8 @@ def get_download_method(host):
             return ['div#info>h1', 'dd>a', 1, 0]
         case "www.bqge.org":
             return ['div#info>h1', 'dl>dt:nth-child(7)~dd>a', 1, 0]
+        case "www.yeduku.net":
+            return ['div#info>h1', 'dl>dt:nth-child(14)~dd>a', 1, 0]
 
 
 def download_thread(main_url, main_info):
@@ -111,6 +113,7 @@ def download_thread(main_url, main_info):
                     case 2:
                         t_url = url.attrs["href"]
                 tmp = s.get(t_url)
+
                 v_count = 0
                 while v_count < 20 & tmp.status_code != 200:
                     time.sleep(1)
@@ -128,7 +131,12 @@ def download_thread(main_url, main_info):
                         try:
                             tmp_html = BeautifulSoup(tmp.content.decode('gbk').replace("<br />", "<br>"), 'html.parser')
                         except Exception as e:
-                            tmp_html = BeautifulSoup(tmp.content.decode('utf-8').replace("<br />", "<br>"), 'html.parser')
+                            print(e)
+                            try:
+                                tmp_html = BeautifulSoup(tmp.content.decode('UTF-8').replace("<br />", "<br>"), 'html.parser')
+                            except Exception as e:
+                                print(e)
+                                tmp_html = BeautifulSoup(tmp.content, 'html.parser')
                     case 2:
                         tmp_html = BeautifulSoup(tmp.content, 'html.parser')
                 title = tmp_html.select_one("h1").text
@@ -181,9 +189,9 @@ if __name__ == '__main__':
                 requests.get("http://4.0.4.51:8080/Serv/bookFinish?bookName=" + book_info["book_name"])
             else:
                 time.sleep(5)
-                download_thread(base_url, book_info)
-                # t = threading.Thread(target=download_thread, args=(base_url, book_info,))
-                # t.start()
+                # download_thread(base_url, book_info)
+                t = threading.Thread(target=download_thread, args=(base_url, book_info,))
+                t.start()
             print(f"当前活跃的线程个数：{_count}")
 
     print(time.time() - ts)
