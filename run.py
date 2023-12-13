@@ -108,13 +108,13 @@ def get_download_method(host):
         case "www.xs386.com":
             return ['div#info>h1', 'dl>dt:nth-child(14)~dd>a', 1, 2]
         case "www.biqudd.org":
-            return ['div#info>h1', 'center~dd>a', 0, 0]
+            return ['div#info>h1', 'center~dd>a', 0, 0,"a#link-next"]
         case "www.biqugeuu.com":
             return ['div#info>h1', 'dl>dt:nth-child(14)~dd>a', 1, 1]
         case "www.aishangba4.com":
             return ['div#info>h1', 'dd>a', 1, 0]
         case "www.bqge.org":
-            return ['div#info>h1', 'dl>dt:nth-child(7)~dd>a', 1, 0]
+            return ['div#info>h1', 'dl>dt:nth-child(7)~dd>a', 1, 0,"a.next"]
         case "www.yeduku.net":
             return ['div#info>h1', 'dl>dt:nth-child(14)~dd>a', 1, 0, "a#pager_next"]
 
