@@ -178,7 +178,7 @@ def download_thread(main_url, main_info):
             s.get("http://4.0.4.51:8080/Serv/bookDownloadNotice?bookName=" + book_name)
     except Exception as e:
         file = open(book_path + log_name, 'a', encoding='utf-8')
-        file.write(main_url + " : has error > " + e + "\n")
+        file.write(main_url + " : has error > " + str(e) + "\n")
         file.close()
 
 
