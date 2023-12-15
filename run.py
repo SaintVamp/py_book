@@ -65,19 +65,19 @@ def page_2_txt(s, url, method, nt_page):
     v_html = ""
     match method:
         case 0:
-            v_html = BeautifulSoup(tmp.text.replace("<br />", "<br>").replace("<br/>", "<br>").replace("<p>", "").replace("</p>", "<br>").replace('<p class="content_detail">', "<br>"), 'html.parser')
+            v_html = BeautifulSoup(tmp.text.replace('id="articlecontent"', 'id="content"').replace("h3>", "h1>").replace("<br />", "<br>").replace("<br/>", "<br>").replace("<p>", "").replace("</p>", "<br>").replace('<p class="content_detail">', "<br>"), 'html.parser')
         case 1:
             try:
-                v_html = BeautifulSoup(tmp.content.decode('gbk').replace("<br />", "<br>").replace("<br/>", "<br>"), 'html.parser')
+                v_html = BeautifulSoup(tmp.content.decode('gbk').replace("h3>", "h1>").replace("<br />", "<br>").replace("<br/>", "<br>").replace("<p>", "").replace("</p>", "<br>").replace('<p class="content_detail">', "<br>"), 'html.parser')
             except Exception as e:
                 print(e)
                 try:
-                    v_html = BeautifulSoup(tmp.content.decode('UTF-8').replace("<br />", "<br>").replace("<br/>", "<br>"), 'html.parser')
+                    v_html = BeautifulSoup(tmp.content.decode('UTF-8').replace("h3>", "h1>").replace("<br />", "<br>").replace("<br/>", "<br>").replace("<p>", "").replace("</p>", "<br>").replace('<p class="content_detail">', "<br>"), 'html.parser')
                 except Exception as e:
                     print(e)
-                    v_html = BeautifulSoup(tmp.content, 'html.parser')
+                    v_html = BeautifulSoup(tmp.content.replace("h3>", "h1>").replace("<br />", "<br>").replace("<br/>", "<br>").replace("<p>", "").replace("</p>", "<br>").replace('<p class="content_detail">', "<br>"), 'html.parser')
         case 2:
-            v_html = BeautifulSoup(tmp.content, 'html.parser')
+            v_html = BeautifulSoup(tmp.content.replace("h3>", "h1>").replace("<br />", "<br>").replace("<br/>", "<br>").replace("<p>", "").replace("</p>", "<br>").replace('<p class="content_detail">', "<br>"), 'html.parser')
     title = v_html.select_one("h1").text
     contents = v_html.select_one("#content").contents
     nt_page_tag = v_html.select_one(nt_page)
@@ -117,6 +117,8 @@ def get_download_method(host):
             return ['div#info>h1', 'dl>dt:nth-child(7)~dd>a', 1, 0,"a.next"]
         case "www.yeduku.net":
             return ['div#info>h1', 'dl>dt:nth-child(14)~dd>a', 1, 0, "a#pager_next"]
+        case "www.quanzhifashi.com":
+            return ['div.introduce>h1', 'div.ml_list>ul>li>a', 1, 0, "div.nr_page:nth-child(2)>a:nth-child(5)"]
 
 
 def download_thread(main_url, main_info):
