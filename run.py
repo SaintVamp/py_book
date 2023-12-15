@@ -65,14 +65,14 @@ def page_2_txt(s, url, method, nt_page):
     v_html = ""
     match method:
         case 0:
-            v_html = BeautifulSoup(tmp.text.replace("<br />", "<br>").replace("<p>", "").replace("</p>", "<br>"), 'html.parser')
+            v_html = BeautifulSoup(tmp.text.replace("<br />", "<br>").replace("<br/>", "<br>").replace("<p>", "").replace("</p>", "<br>").replace('<p class="content_detail">', "<br>"), 'html.parser')
         case 1:
             try:
-                v_html = BeautifulSoup(tmp.content.decode('gbk').replace("<br />", "<br>"), 'html.parser')
+                v_html = BeautifulSoup(tmp.content.decode('gbk').replace("<br />", "<br>").replace("<br/>", "<br>"), 'html.parser')
             except Exception as e:
                 print(e)
                 try:
-                    v_html = BeautifulSoup(tmp.content.decode('UTF-8').replace("<br />", "<br>"), 'html.parser')
+                    v_html = BeautifulSoup(tmp.content.decode('UTF-8').replace("<br />", "<br>").replace("<br/>", "<br>"), 'html.parser')
                 except Exception as e:
                     print(e)
                     v_html = BeautifulSoup(tmp.content, 'html.parser')
