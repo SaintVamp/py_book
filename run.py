@@ -78,7 +78,7 @@ def page_2_txt(s, url, method, nt_page):
                     v_html = BeautifulSoup(tmp.content.replace("h3>", "h1>").replace("<br />", "<br>").replace("<br/>", "<br>").replace("<p>", "").replace("</p>", "<br>").replace('<p class="content_detail">', "<br>"), 'html.parser')
         case 2:
             v_html = BeautifulSoup(tmp.content.replace("h3>", "h1>").replace("<br />", "<br>").replace("<br/>", "<br>").replace("<p>", "").replace("</p>", "<br>").replace('<p class="content_detail">', "<br>"), 'html.parser')
-    title = v_html.select_one("h1").text
+    title = v_html.select_one("h1").text.replace("\n","").strip()
     contents = v_html.select_one("#content").contents
     nt_page_tag = v_html.select_one(nt_page)
     nt_page_text = v_html.select_one(nt_page).text
@@ -133,7 +133,7 @@ def download_thread(main_url, main_info):
         bs = BeautifulSoup(r.content, 'html.parser')
         # 两个网站容错
         book_name = bs.select(download_method[0])
-        book_name = book_name[0].text
+        book_name = book_name[0].text.replace("\n","").strip()
         book_file = book_name + ".txt"
         log_name = book_name + ".log"
         arr_url = bs.select(download_method[1])
