@@ -9,7 +9,7 @@ import pymysql
 import requests
 from bs4 import BeautifulSoup, NavigableString
 
-linux_path = "/usr/sv/book/"
+linux_path = "/data/book/"
 if platform.system() == 'Windows':
     book_path = os.getcwd() + '/out/'
     config_path = os.getcwd() + "/"
@@ -19,7 +19,7 @@ else:
 
 
 def operate_mysql(op_sql):
-    db = pymysql.connect(host="4.0.4.52", port=7848, user="sv", password="sv@8004", db="SV", charset='utf8')
+    db = pymysql.connect(host="404.svsoft.fun", port=45004, user="sv", password="sv@8004", db="SV", charset='utf8')
     cursor = db.cursor()
     cursor.execute(op_sql)
     tmp = cursor.fetchone()
