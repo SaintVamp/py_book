@@ -177,7 +177,7 @@ def download_thread(main_url, main_info):
         if flag:
             update_book_count(main_url, main_info["count"])
         else:
-            s.get("http://4.0.4.51:8080/Serv/bookDownloadNotice?bookName=" + book_name)
+            s.get("https://tomcat.404.svsoft.fun:40000/Serv/bookDownloadNotice?bookName=" + book_name)
     except Exception as e:
         file = open(book_path + log_name, 'a', encoding='utf-8')
         file.write(main_url + " : has error > " + str(e) + "\n")
